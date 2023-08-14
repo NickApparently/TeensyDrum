@@ -3,6 +3,9 @@ TeensyDrum is a 6 pad Midi Drum Pad powered by a Teensy 4.0. Expanded by 2 exter
 
 ![](https://raw.githubusercontent.com/NickApparently/TeensyDrum/main/20220511_072148.jpg)
 
+# PCB
+> Showcase PCB
+
 # FSR and Piezo analysis
 > Add explanation on FSR and Piezo
 
