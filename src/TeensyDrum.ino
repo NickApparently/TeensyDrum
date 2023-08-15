@@ -89,10 +89,6 @@ bool  switchPressed[numOfSwitch];
 bool  switchState[numOfSwitch];
 unsigned long switchChangeTime[numOfSwitch];
 
-int numOfScans[numOfPads + numOfExtTrig]; //Diag
-bool plot[numOfPads + numOfExtTrig];//Diag
-int tempPin = 2; //Diag
-
 //Data for menu
 int   menuItem[5]; //An int for the selected menu item for every menu depth. menuItem[0] is not used.
 byte  menuDepth = 0;
@@ -233,37 +229,34 @@ void loop() {
       PADhit[pin] = true; //Hit is active
       PADscan[pin] = true; //Scan Time is active
       PADdisplay[pin] = true; //Display hit on LCD is active
-      //diag
-      plot[pin] = true;
-      //diag
-  //      if (!menuActive){ //Only display the hit if the menu is not active
-  //        if (pin < numOfPads){
-  //          lcd.setCursor(pin % 3, pin / 3); //Display hit
-  //          lcd.write(0b11111111);
-  //        } else {
-  //          lcd.setCursor(pin % 2 + 4, pin / 2 - 3); //Display hit
-  //          //lcd.write(0b11111111);
-  //          lcd.print(pin - 5);
-  //        }
-  //      }
+
+      if (!menuActive){ //Only display the hit if the menu is not active
+        if (pin < numOfPads){
+          lcd.setCursor(pin % 3, pin / 3); //Display hit
+          lcd.write(0b11111111);
+        } else {
+          lcd.setCursor(pin % 2 + 4, pin / 2 - 3); //Display hit
+          //lcd.write(0b11111111);
+          lcd.print(pin - 5);
+        }
+      }
     }
 
     //Stop displaying hit after displaytime has passed
     if ((PADdisplay[pin] == true && PADhitTime[pin] + displayHitTime < micros()) && !menuActive){ 
       PADdisplay[pin] = false; //Display hit on LCD is deactivated
-  //      if (pin < numOfPads){
-  //        lcd.setCursor(pin % 3, pin / 3); //Display empty char
-  //        lcd.write(0b00010000);
-  //      } else {
-  //        lcd.setCursor(pin % 2 + 4, pin / 2 - 3); //Display empty char
-  //        lcd.write(0b00010000);
-  //      }
+      if (pin < numOfPads){
+        lcd.setCursor(pin % 3, pin / 3); //Display empty char
+        lcd.write(0b00010000);
+      } else {
+        lcd.setCursor(pin % 2 + 4, pin / 2 - 3); //Display empty char
+        lcd.write(0b00010000);
+      }
     }
 
     //If Scan Time is active and PadSensitivity is on, record highest peak (note velocity = 0)
     if (PADscan[pin] == true && MidiData[pin].data2 == 0){ 
         PADmax[pin] = max(PADmax[pin],PADvalue[pin]); //Get peak value
-        numOfScans[pin] ++; //Diag
 
       if(PADscan[pin] == true && PADhitTime[pin] + (settings[pin].tScan * 100) < micros()){ //Send max peakhight as midi velocity after scantime is over
         PADscan[pin] = false; //Deactivate Scan      //Calculate value with compressor settings which also scales from 0-127
@@ -275,10 +268,6 @@ void loop() {
         if(MidiData[pin].command == 0x90){ //If command is Note On, then also send Note Off
           midiSend(0x80, MidiData[pin].data1, 0, MidiData[pin].channel);
         }
-
-        Serial.println(PADmax[pin]); //Diag
-        Serial.println(numOfScans[pin]); //Diag
-        numOfScans[pin] = 0; //Diag
       } 
     } else if(PADscan[pin] == true && MidiData[pin].data2 > 0){ //If PadSensitivity is off, send midi with a set velocity
       PADscan[pin] = false; //Deactivate Scan, as there is no scan time
@@ -297,11 +286,6 @@ void loop() {
       PADmax[pin] = 0; //Reset highest peak
       PADhit[pin] = false; //Deactivate hit
     }
-
-    //Diag
-    if (plot[pin] == true && PADhitTime[pin] + (settings[pin].tMask * 1000) + 1000 < micros()){
-      plot[pin] = false;
-    }
   }
 
   //Footswitches
@@ -312,10 +296,10 @@ void loop() {
       lastOperatedItem = pin + 8; //Set last operated item to pad number for menu purposes
       changeMenuItem = true; //Set changeMenuItem flag to update menu
       midiSend(MidiData[pin + 8].command, MidiData[pin + 8].data1, MidiData[pin + 8].data2, MidiData[pin + 8].channel);
-  //      if (!menuActive){ //Only display footswitch status if the menu is not active
-  //        lcd.setCursor(pin + 4, 1); //Display status
-  //        lcd.write(0b11111111);
-  //      }
+      if (!menuActive){ //Only display footswitch status if the menu is not active
+        lcd.setCursor(pin + 4, 1); //Display status
+        lcd.write(0b11111111);
+      }
     }
 
     if (switchState[pin] == false && switchPressed[pin] == true && switchChangeTime[pin] + settings[pin + 8].tMask * 1000 < micros()){ //Falling edge of footswitch
@@ -325,65 +309,18 @@ void loop() {
         midiSend(0x80, MidiData[pin + 8].data1, 0, MidiData[pin + 8].channel);
       }
       
-  //      if (!menuActive){ //Only stop displaying footswitch status if the menu is not active
-  //        lcd.setCursor(pin + 4, 1); //Display empty char
-  //        lcd.write(0b00010000);
-  //      }
+      if (!menuActive){ //Only stop displaying footswitch status if the menu is not active
+        lcd.setCursor(pin + 4, 1); //Display empty char
+        lcd.write(0b00010000);
+      }
     }
   }
-
-  //  if(plot[tempPin]){
-  //    Serial.printf("PAD%u:%u,",tempPin,PADvalue[tempPin]);
-  //    Serial.printf("Diff%u:%u,",tempPin,FSRdiff[tempPin]);
-  //    Serial.printf("Thres:%u,",settings[tempPin].threshold * 4);
-  //    Serial.printf("Scan:%u,",PADscan[tempPin] * 200);
-  //    Serial.printf("Peak:%u,",PADmax[tempPin]);
-  //
-  //    Serial.printf("Min:%u,",0);
-  //    Serial.printf("Max:%u,\n",1000);
-  //  }
-
 }
 
 //====================================================================================================
 //Code to save settings to EEPROM
 //====================================================================================================
 void save(byte slot) {
-  ///*  //print old saved settings
-  Monitor.printf("\nPreviously Saved settings on slot %u. [Address:value]", slot); //Diag
-  for (int item = 0; item < numOfMenuItems * numOfSettings; item += numOfSettings){ //Diag
-    if (item % numOfSettings == 0){
-      Monitor.println();
-    }
-    for(int i = 0; i < numOfSettings; i++){
-  //      Monitor.printf("%u:",item + ((slot - 1) * (numOfMenuItems * numOfSettings)) + i); //Address
-      Monitor.printf("%u\t",EEPROM.read(item + ((slot - 1) * (numOfMenuItems * numOfSettings)) + i));
-    }
-  }
-
-  //print current settings
-  Monitor.println("\n\nCurrent settings"); //Diag
-  for (int item = 0; item < numOfMenuItems; item++){ //Diag
-    Monitor.print(settings[item].command, HEX); Monitor.print("\t");
-    Monitor.print(settings[item].channel); Monitor.print("\t");
-    Monitor.print(settings[item].noteValue); Monitor.print("\t");
-    Monitor.print(settings[item].noteVelocity); Monitor.print("\t");
-    Monitor.print(settings[item].ctrlNumber); Monitor.print("\t");
-    Monitor.print(settings[item].ctrlValue); Monitor.print("\t");
-    Monitor.print(settings[item].progNumber); Monitor.print("\t");
-    Monitor.print(settings[item].loadSlot); Monitor.print("\t");
-    Monitor.print(settings[item].threshold); Monitor.print("\t");
-    Monitor.print(settings[item].tScan); Monitor.print("\t");
-    Monitor.print(settings[item].tMask); Monitor.print("\t");
-    Monitor.println();
-  }
-  //*/
-  Monitor.printf("\nSaved on slot %u", slot); //Diag
-  Monitor.print("\tAddress: ");
-  Monitor.print(0 + ((slot - 1) * numOfMenuItems * numOfSettings));
-  Monitor.print(" to ");
-  Monitor.println((numOfMenuItems * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) - 1 );
-  
   //11 settings for each of the 10 items (Pad/External Trigger/Switch)
   //The EEPROM address is calculated by multiplying the item nummber by the nummer of settings per item. So the addresses of each item are offset by 11 settings.
   //Then add the offset of the total amount of settings per slot. 
@@ -406,19 +343,7 @@ void save(byte slot) {
     EEPROM.update((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 8, settings[item].threshold); //Actual code to save settings to save slot on EEPROM
     EEPROM.update((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 9, settings[item].tScan); //Actual code to save settings to save slot on EEPROM
     EEPROM.update((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 10, settings[item].tMask); //Actual code to save settings to save slot on EEPROM
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 0), HEX); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 1)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 2)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 3)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 4)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 5)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 6)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 7)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 8)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 9)); Monitor.print("\t"); //Diag
-    Monitor.print(EEPROM.read((item * numOfSettings) + ((slot - 1) * numOfMenuItems * numOfSettings) + 10)); Monitor.print("\t\n"); //Diag
-  }
-  Monitor.println(); //Diag
+}
 
   //If you wish to start next time with the last saved slot, save this slot.
   //EEPROM.update(lastLoadedSlotAddress, slot); //Load slot
@@ -428,41 +353,6 @@ void save(byte slot) {
 //Code to load settings from EEPROM
 //====================================================================================================
 void load(int slot) {
-    //print current settings
-  //  Monitor.println(); //Diag
-  //  Monitor.println("Current settings"); //Diag
-  //  for (int item = 0; item < numOfMenuItems; item++){ //Diag
-  //    Monitor.print(settings[item].command, HEX); Monitor.print("\t");
-  //    Monitor.print(settings[item].channel); Monitor.print("\t");
-  //    Monitor.print(settings[item].noteValue); Monitor.print("\t");
-  //    Monitor.print(settings[item].noteVelocity); Monitor.print("\t");
-  //    Monitor.print(settings[item].ctrlNumber); Monitor.print("\t");
-  //    Monitor.print(settings[item].ctrlValue); Monitor.print("\t");
-  //    Monitor.print(settings[item].progNumber); Monitor.print("\t");
-  //    Monitor.print(settings[item].loadSlot); Monitor.print("\t");
-  //    Monitor.print(settings[item].threshold); Monitor.print("\t");
-  //    Monitor.print(settings[item].tScan); Monitor.print("\t");
-  //    Monitor.print(settings[item].tMask); Monitor.print("\t");
-  //    Monitor.println();
-  //  }
-
-    //print current saved settings
-  //  Monitor.printf("\nSetting on slot %u [Address:value]", slot); //Diag
-  //  for (int item = 0; item < numOfMenuItems * numOfSettings; item += numOfSettings){ //Diag
-  //    if (item % numOfSettings == 0){
-  //      Monitor.println();
-  //    }
-  //    for(int i = 0; i < numOfSettings; i++){
-  ////      Monitor.printf("%u:",item + ((slot - 1) * (numOfMenuItems * numOfSettings)) + i); //Address
-  //      Monitor.printf("%u",EEPROM.read(item + ((slot - 1) * (numOfMenuItems * numOfSettings)) + i));
-  ////      Monitor.printf("-%u-%u",item, i);
-  //      Monitor.print("\t");
-  //    }
-  //  }
-  //  Monitor.println(); //Diag
-  //  Monitor.println(); //Diag
-
-  //  Monitor.printf("Loaded from slot %u\n", slot); //Diag
   for (int item = 0; item < numOfMenuItems; item++){
     settings[item].command      = EEPROM.read((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 0); //Actual code to load settings from EEPROM
     settings[item].channel      = EEPROM.read((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 1); //Actual code to load settings from EEPROM
@@ -475,28 +365,16 @@ void load(int slot) {
     settings[item].threshold    = EEPROM.read((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 8); //Actual code to load settings from EEPROM
     settings[item].tScan        = EEPROM.read((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 9); //Actual code to load settings from EEPROM
     settings[item].tMask        = EEPROM.read((item * numOfSettings) + ((slot - 1) * (numOfMenuItems * numOfSettings)) + 10); //Actual code to load settings from EEPROM
-  //    Monitor.print(settings[item].command, HEX); Monitor.print("\t");
-  //    Monitor.print(settings[item].channel); Monitor.print("\t");
-  //    Monitor.print(settings[item].noteValue); Monitor.print("\t");
-  //    Monitor.print(settings[item].noteVelocity); Monitor.print("\t");
-  //    Monitor.print(settings[item].ctrlNumber); Monitor.print("\t");
-  //    Monitor.print(settings[item].ctrlValue); Monitor.print("\t");
-  //    Monitor.print(settings[item].progNumber); Monitor.print("\t");
-  //    Monitor.print(settings[item].loadSlot); Monitor.print("\t");
-  //    Monitor.print(settings[item].threshold); Monitor.print("\t");
-  //    Monitor.print(settings[item].tScan); Monitor.print("\t");
-  //    Monitor.print(settings[item].tMask); Monitor.print("\t\n");
   }
-  //  Monitor.println(); //Diag
 
   //Update all midi data from loaded settings
   for(int i = 0; i < numOfMenuItems; i++){
     updateMidiData(i);
   }
 
-    //Save which slot was loaded last for recallability
-    //Only activate if you wish to restart with last loaded settings, even when changing with pads or switches
-    //When loading from the menu, the lastloadedslot is saved to the EEPROM directly.
+  //Save which slot was loaded last for recallability
+  //Only activate if you wish to restart with last loaded settings, even when changing with pads or switches
+  //When loading from the menu, the lastloadedslot is saved to the EEPROM directly.
   //  EEPROM.update(lastLoadedSlotAddress, slot); 
   lastLoadedSlot = slot;
 
@@ -586,7 +464,6 @@ void midiSend(int cmd, int data1, int data2, int channel) {
       }
       break;
   }
-  //  Serial.printf("Cmd %0X - Data1 %3u - Data2 %3u\n",cmd, data1, data2);
 }
 
 //====================================================================================================
@@ -1118,10 +995,6 @@ void calcCompressor() {
   
   for(int i = 0; i < numOfPads + numOfExtTrig; i++){
     PADgain[i] = maxOutput / (PADthreshold[i] + (maxInput - PADthreshold[i]) / PADratio[i]); //Calculate auto-gain settings for compressor. Only active once hit-value is above the compressor threshold.
-  //    Serial.print("Pad "); //Diag
-  //    Serial.print(i); //Diag
-  //    Serial.print(" "); //Diag
-  //    Serial.println(PADgain[i]); //Diag
   }
 }
 
