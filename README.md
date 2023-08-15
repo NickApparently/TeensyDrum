@@ -23,7 +23,7 @@ The FSR sensor is a home-made sensor. It consists of a thin PCB with open copper
 
 The traces on the PCB are 2 combs with alternating fingers. The layer velostat is taped to the PCB using dubble sided tape. This leaves a small gap between the velostat and the PCB, resulting in a disconnected "R2". The Teensy measures 3.3v. If a pad is hit, the velostat will connect the 2 combs resulting in a quick voltage drop.
 
-<img src="https://raw.githubusercontent.com/NickApparently/TeensyDrum/main/images/20220430_150813.jpg" height="300"> <img src="https://raw.githubusercontent.com/NickApparently/TeensyDrum/main/images/20220505_092533.jpg" height="300">
+<img src="https://raw.githubusercontent.com/NickApparently/TeensyDrum/main/images/20220430_150813.jpg" height="250"> <img src="https://raw.githubusercontent.com/NickApparently/TeensyDrum/main/images/20220505_092533.jpg" height="250">
 
 # Menu
 1. Pad 1
